@@ -48,7 +48,12 @@ echo '{"body":{"type":"task_done","text":"done"}}' | hermes-callback
 
 ## Configuration
 
-Messages are routed by `notify.yaml`. Each callback rule specifies a `match_type` and a `command` to execute:
+Route rules are defined in `~/.hermes/bus-rules.yaml` and processed by
+[hermes-bus-plugin](https://github.com/mlinquan/hermes-bus-plugin).
+See its README for the full rule format.
+
+This section only covers session aliases (used by `notify-hermes` for
+sender name resolution) and the `default_sender` config:
 
 ```yaml
 callbacks:
@@ -71,33 +76,6 @@ The `command` field receives these environment variables:
 - `FROM` — sender endpoint name
 - Stdin — raw message JSON (for backward compatibility)
 
-### Print Format
-
-When `print: true`, the terminal output uses `print_format` template. Supports placeholders:
-
-| Placeholder | Description | Example |
-|-------------|-------------|---------|
-| `{from}` | Sender endpoint name | `银锭` |
-| `{text}` | Message body text | `任务完成` |
-| `{type}` | Message type | `task_done` |
-| `{ts}` | Unix timestamp (raw) | `1744986323` |
-| `{ts:%Y-%m-%d %H:%M:%S}` | Formatted timestamp | `2026-05-18 17:45:23` |
-| `{color:cyan}` | ANSI foreground color | `black`/`red`/`green`/`yellow`/`blue`/`magenta`/`cyan`/`white` |
-| `{color:bold_green}` | Bold color variant | `bold_red`, `bold_green`, etc. |
-| `{bold}` | Bold text | |
-| `{reset}` | Reset all styles | |
-
-Default: `[{from}] {text}`
-
-```yaml
-callbacks:
-  - match_type: task_done
-    print: true
-    print_format: "{color:bold_green}✔ {from}{reset}  {color:cyan}[{ts:%H:%M:%S}]{reset}  {text}"
-    context: true
-    command: "afplay /System/Library/Sounds/Glass.aiff"
-```
-
 Example callback scripts are bundled in `examples/`:
 
 ```bash
@@ -109,14 +87,11 @@ examples/slack-notify.sh    # Slack webhook (set SLACK_WEBHOOK_URL)
 ## Architecture
 
 ```
-stdin / Bus hook ──→ bus_callback.py ──→ notify.yaml rules
-                                              │
-                                         Match?
-                                        ├─ yes → execute command
-                                        └─ no  → silent
+notify-hermes ──→ hermes-bus (Unix Socket)
+notify-agent  ──→ tmux send-keys
 
-notify-hermes — Bus message sender
-notify-agent  — tmux notification sender
+Message routing (print/inject/command) is handled by hermes-bus-plugin
+via ~/.hermes/bus-rules.yaml.
 ```
 
 ## Session Aliases
