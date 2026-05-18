@@ -1,0 +1,37 @@
+[project]
+name = "hermes-notify"
+version = "0.1.0"
+description = "A config-driven notification router — rule matching, audio playback, multi-backend command execution"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "LinQuan", email = "i@linquan.name"}]
+requires-python = ">=3.10"
+dependencies = []
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+homepage = "https://github.com/mlinquan/hermes-notify"
+repository = "https://github.com/mlinquan/hermes-notify"
+
+[project.scripts]
+notify-hermes = "hermes_notify.notify_hermes:main"
+notify-agent = "hermes_notify.notify_agent:main"
+hermes-callback = "hermes_notify.bus_callback:main"
+
+[tool.setuptools.packages.find]
+include = ["hermes_notify*"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
