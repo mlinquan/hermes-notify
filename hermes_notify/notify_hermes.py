@@ -229,9 +229,8 @@ def main():
     )
     parser.add_argument(
         "--type",
-        choices=["task_start", "task_done", "plan_ready", "task_error", "need_decision", "ack", "progress"],
         default=None,
-        help="Message type for callback matching",
+        help="Message type for callback matching (any string, matched against notify.yaml match_type)",
     )
     parser.add_argument(
         "--config",
