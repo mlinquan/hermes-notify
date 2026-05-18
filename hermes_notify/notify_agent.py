@@ -18,7 +18,7 @@ import time
 
 def _get_config_path() -> str:
     home = os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))
-    return os.path.join(home, "hermes-notify", "notify.yaml")
+    return os.path.join(home, "bus-rules.yaml")
 
 
 def _load_default_sender(config_path: str = None) -> str:

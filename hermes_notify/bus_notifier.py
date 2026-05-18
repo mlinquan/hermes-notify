@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Bus message notification daemon.
 
-Listens to Hermes Bus broadcast messages, matches notify.yaml callbacks
-by body.type against match_type (highest priority wins), then executes
-the configured command with MESSAGE / TYPE / FROM as environment variables.
+Listens to Hermes Bus messages, matches bus-rules.yaml callbacks
+by body.type against match_type, then executes the configured command
+with MESSAGE / TYPE / FROM as environment variables.
 """
 import json
 import logging
@@ -14,12 +14,13 @@ import sys
 import time
 from typing import Optional
 
+import yaml
+
 HERMES_HOME = os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))
 _bus_dir = os.path.join(HERMES_HOME, "hermes-bus")
 if os.path.isdir(_bus_dir):
     sys.path.insert(0, _bus_dir)
-_notify_dir = os.path.join(HERMES_HOME, "hermes-notify")
-DEFAULT_CONFIG = os.path.join(_notify_dir, "notify.yaml")
+DEFAULT_CONFIG = os.path.join(HERMES_HOME, "bus-rules.yaml")
 DEFAULT_SOCKET = os.path.join(HERMES_HOME, "hermes-bus.sock")
 
 logging.basicConfig(
@@ -31,78 +32,26 @@ log = logging.getLogger("bus-notifier")
 
 
 def load_yaml_config(path: str) -> dict:
-    """Load notify.yaml config. Returns dict with callbacks list."""
+    """Load bus-rules.yaml config."""
     if not os.path.exists(path):
         log.error(f"Config file not found: {path}")
         sys.exit(1)
-
-    with open(path) as f:
-        content = f.read()
-
-    config = {"callbacks": []}
-    current_rule = None
-
-    for line in content.split("\n"):
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-
-        indent = len(line) - len(line.lstrip())
-
-        # Top-level callbacks section marker
-        if stripped == "callbacks:":
-            continue
-
-        # New callback entry (starts with "- match_type:" or "- command:" etc.)
-        if stripped.startswith("- ") and ":" in stripped:
-            # Check if this starts a new callback block
-            key = stripped[2:].split(":")[0].strip()
-            if key in ("match_type", "command", "print", "context", "priority"):
-                current_rule = {}
-                config["callbacks"].append(current_rule)
-
-        if current_rule is not None and stripped.startswith("- "):
-            key, _, val = stripped[2:].partition(":")
-            key = key.strip()
-            val = val.strip().strip("'\"")
-
-            if key == "priority":
-                current_rule[key] = int(val)
-            elif key in ("print", "context"):
-                current_rule[key] = val.lower() in ("true", "yes", "1")
-            elif key == "command":
-                current_rule[key] = os.path.expanduser(val)
-            else:
-                current_rule[key] = val
-
-        elif current_rule is not None and indent >= 4:
-            key, _, val = stripped.partition(":")
-            key = key.strip()
-            val = val.strip().strip("'\"")
-
-            if key == "command":
-                current_rule[key] = os.path.expanduser(val)
-            elif key == "priority":
-                current_rule[key] = int(val)
-            elif key in ("print", "context"):
-                current_rule[key] = val.lower() in ("true", "yes", "1")
-            elif key == "match_type":
-                current_rule[key] = val
-            else:
-                current_rule[key] = val
-
-    return config
+    try:
+        with open(path) as f:
+            return yaml.safe_load(f) or {"callbacks": []}
+    except Exception as e:
+        log.error(f"Failed to parse config: {e}")
+        sys.exit(1)
 
 
 def pick_best_rule(msg_type: Optional[str], callbacks: list[dict]) -> Optional[dict]:
-    """Select best matching callback by body.type exact match against match_type.
-    Highest priority (lowest number) wins. Returns None if no match."""
+    """Find matching callback by body.type exact match against match_type."""
     if not msg_type:
         return None
-    type_matches = [r for r in callbacks if r.get("match_type") == msg_type]
-    if not type_matches:
-        return None
-    return min(type_matches, key=lambda r: r.get("priority", 100))
+    for r in callbacks:
+        if r.get("match_type") == msg_type:
+            return r
+    return None
 
 
 def run_command(rule: dict, msg: dict):

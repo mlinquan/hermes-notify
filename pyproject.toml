@@ -1,12 +1,12 @@
 [project]
 name = "hermes-notify"
-version = "0.3.1"
-description = "A config-driven notification router — rule matching, audio playback, multi-backend command execution"
+version = "0.4.0"
+description = "Hermes notification toolkit — bus message sender, tmux notifier, bus-notifier daemon"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "LinQuan", email = "i@linquan.name"}]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["PyYAML>=6.0"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -27,7 +27,7 @@ repository = "https://github.com/mlinquan/hermes-notify"
 [project.scripts]
 notify-hermes = "hermes_notify.notify_hermes:main"
 notify-agent = "hermes_notify.notify_agent:main"
-hermes-callback = "hermes_notify.bus_callback:main"
+hermes-bus-notifier = "hermes_notify.bus_notifier:main"
 
 [tool.setuptools.packages.find]
 include = ["hermes_notify*"]

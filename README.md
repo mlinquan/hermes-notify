@@ -2,20 +2,25 @@
 
 [English](./README.md) | [中文](./README.zh.md)
 
-A config-driven notification router for Hermes Agent — rule matching, context injection, audio playback, and custom command execution.
+A config-driven notification toolkit for Hermes Agent — CLI senders for bus messages and tmux notifications.
 
-Transport-agnostic. Reads messages from stdin or a Bus hook, matches against `notify.yaml` rules, and executes the configured action.
+Works with `hermes-bus` and `hermes-bus-plugin`. Route rules live in `~/.hermes/bus-rules.yaml`.
 
 ## What is this?
 
-hermes-notify is a **message router** for the Hermes Agent ecosystem. When a message arrives (from a bus, a script, or stdin), it checks the message type against your `notify.yaml` rules. If a rule matches, it executes the configured command — anything from a macOS notification to a Slack webhook.
+hermes-notify provides two CLI tools:
+
+- **`notify-hermes`** — send messages to any bus endpoint (short-lived connection via `hermes_bus.client.send_message`)
+- **`notify-agent`** — send messages to tmux sessions via `send-keys`
+
+Route processing (print, context injection, command execution) is handled by `hermes-bus-plugin`.
 
 ### Quickstart
 
 1. Install: `pip install hermes-notify`
-2. Create a `notify.yaml` config file with a rule (see Configuration below)
+2. Configure route rules in `~/.hermes/bus-rules.yaml` (see [hermes-bus-plugin](https://github.com/mlinquan/hermes-bus-plugin))
 3. Send a message: `notify-hermes --to my-service --type task_done "Hello"`
-4. The callback matches `match_type: task_done` and runs your command
+4. The plugin matches `match_type: task_done` and handles it
 
 ## Install
 
@@ -42,8 +47,8 @@ notify-hermes --to my-service --type ack "Received"
 notify-agent mysession "Start working"
 notify-agent --simple mysession "FYI: something happened"
 
-# Process a callback message from stdin
-echo '{"body":{"type":"task_done","text":"done"}}' | hermes-callback
+# Route processing is handled by hermes-bus-plugin
+# See https://github.com/mlinquan/hermes-bus-plugin
 ```
 
 ## Configuration
@@ -52,37 +57,7 @@ Route rules are defined in `~/.hermes/bus-rules.yaml` and processed by
 [hermes-bus-plugin](https://github.com/mlinquan/hermes-bus-plugin).
 See its README for the full rule format.
 
-This section only covers session aliases (used by `notify-hermes` for
-sender name resolution) and the `default_sender` config:
-
-```yaml
-callbacks:
-  - match_type: task_error
-    print: false
-    context: true
-    command: "notify-send 'Task failed'"
-
-  - match_type: task_done
-    print: false
-    context: true
-    command: "afplay ~/sounds/done.mp3"
-```
-
-Two boolean fields control behavior: `print` (terminal output), `context` (inject into LLM context).
-
-The `command` field receives these environment variables:
-- `MESSAGE` — full message JSON
-- `TYPE` — message type
-- `FROM` — sender endpoint name
-- Stdin — raw message JSON (for backward compatibility)
-
-Example callback scripts are bundled in `examples/`:
-
-```bash
-examples/macos-notify.py    # macOS notification via osascript
-examples/play-sound.py      # Play random sound via afplay  
-examples/slack-notify.sh    # Slack webhook (set SLACK_WEBHOOK_URL)
-```
+Session aliases and the default sender name are also configured in `bus-rules.yaml`:
 
 ## Architecture
 
@@ -96,7 +71,7 @@ via ~/.hermes/bus-rules.yaml.
 
 ## Session Aliases
 
-Map tmux session names to human-readable sender names in `notify.yaml`:
+Map tmux session names to human-readable sender names in `bus-rules.yaml`:
 
 ```yaml
 session_aliases:

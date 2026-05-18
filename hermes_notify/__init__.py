@@ -1,13 +1,4 @@
-"""Hermes notification plugin — rule matching, audio playback, display control.
+"""Hermes notification plugin — session aliases, CLI sender tools.
 
-Transport-agnostic.
-Reads messages from stdin JSON or Bus hook, matches against notify.yaml rules.
-
-Multi-backend architecture:
- stdin / Bus hook -> bus_callback.py -> notify.yaml rules -> execute callback
-
-Current backends:
- - bus (subprocess hook mode)
-Backends to add:
- - tmux, stdout, webhook
+Transport-agnostic. Route processing is handled by hermes-bus-plugin.
 """
