@@ -1,12 +1,12 @@
 [project]
 name = "hermes-notify"
-version = "0.5.0"
+version = "0.7.0"
 description = "Hermes notification toolkit — bus message sender, tmux notifier"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "LinQuan", email = "i@linquan.name"}]
 requires-python = ">=3.10"
-dependencies = ["PyYAML>=6.0", "hermes-bus>=0.5.0"]
+dependencies = ["PyYAML>=6.0", "hermes-bus>=0.7.0"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

@@ -79,7 +79,7 @@ notify-hermes --to <endpoint> --body '{"text":"hello","key":"value"}'
 | `--type` | 否 | 无 | 应用层消息类型（见下表） |
 | `--channel` | 否 | 无 | 回复路由令牌：`platform:chat_id` 或 `platform`（回退到 `*_HOME_CHANNEL` 环境变量） |
 | `--from` | 否 | 自动 | 覆盖发送者名称。默认从 tmux session 通过 `bus-rules.yaml` 的 `role_map` 自动检测 |
-| `--socket` | 否 | 自动 | 自定义 Unix socket 路径。默认：`$HERMES_HOME/hermes-bus.sock` |
+| `--socket` | 否 | 自动 | 自定义 Unix socket 路径。默认：`$HERMES_BUS_ROOT/hermes-bus.sock` |
 | `--config` | 否 | 自动 | `bus-rules.yaml` 路径。默认：`$HERMES_HOME/bus-rules.yaml` |
 
 \* `"消息"` 或 `--body` 二选一，不能同时使用。

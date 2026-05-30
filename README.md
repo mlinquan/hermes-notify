@@ -79,7 +79,7 @@ notify-hermes --to <endpoint> --body '{"text":"hello","key":"value"}'
 | `--type` | no | none | Application-level message type (see table below) |
 | `--channel` | no | none | Reply routing token: `platform:chat_id` or `platform` (falls back to `*_HOME_CHANNEL` env var) |
 | `--from` | no | auto | Override sender name. Auto-detected from tmux session via `role_map` in `bus-rules.yaml` |
-| `--socket` | no | auto | Custom Unix socket path. Default: `$HERMES_HOME/hermes-bus.sock` |
+| `--socket` | no | auto | Custom Unix socket path. Default: `$HERMES_BUS_ROOT/hermes-bus.sock` |
 | `--config` | no | auto | Path to `bus-rules.yaml`. Default: `$HERMES_HOME/bus-rules.yaml` |
 
 \* Either `"message"` or `--body` is required, but not both.
