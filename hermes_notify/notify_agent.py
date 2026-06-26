@@ -35,6 +35,37 @@ def _load_default_sender(config_path: str = None) -> str:
     return ""
 
 
+def _load_role_map(config_path: str = None) -> dict:
+    """Load role_map from bus-rules.yaml. Falls back to empty dict."""
+    path = config_path or _get_config_path()
+    if not os.path.exists(path):
+        return {}
+    try:
+        import yaml
+        with open(path) as f:
+            cfg = yaml.safe_load(f) or {}
+        return cfg.get("role_map", {}) if isinstance(cfg, dict) else {}
+    except Exception:
+        return {}
+
+
+def _lookup_role(from_ep: str, role_map: dict) -> str:
+    """Resolve a sender token into its role_map display name.
+
+    Accepts either a session key (e.g. "shiyinru") or an existing display name.
+    Returns the token unchanged if not found in role_map.
+    """
+    if not from_ep:
+        return from_ep
+    role = role_map.get(from_ep, {})
+    if role:
+        return role.get("name", from_ep)
+    for cfg in role_map.values():
+        if cfg.get("name") == from_ep:
+            return cfg.get("name", from_ep)
+    return from_ep
+
+
 def main():
     simple_mode = False
     sender = None
@@ -50,8 +81,8 @@ def main():
             print("Usage: --config <path>", file=sys.stderr)
             sys.exit(1)
 
-    # Parse --from parameter
-    if args and args[0] == '--from':
+    # Parse --from parameter (--from may appear before or after --to)
+    while args and args[0] == '--from':
         if len(args) >= 2:
             sender = args[1]
             args = args[2:]
@@ -59,25 +90,47 @@ def main():
             print("Usage: --from <sender_name>", file=sys.stderr)
             sys.exit(1)
 
+    # Parse --to parameter (alias for the positional <session>)
+    if args and args[0] == '--to':
+        if len(args) >= 2:
+            session_via_to = args[1]
+            args = args[2:]
+        else:
+            print("Usage: --to <session>", file=sys.stderr)
+            sys.exit(1)
+    else:
+        session_via_to = None
+
     if args and args[0] == '--simple':
         simple_mode = True
         args = args[1:]
 
-    if len(args) < 2:
-        print("Usage: python3 notify-agent.py [--config <path>] [--from <sender>] [--simple] <session> <message>",
+    if len(args) < 1 and not session_via_to:
+        print("Usage: python3 notify-agent.py [--config <path>] [--from <sender>] [--to <session>] [--simple] <session> <message>",
               file=sys.stderr)
         sys.exit(1)
 
-    session = args[0]
-
-    if sender:
-        message = sender + ': ' + ' '.join(args[1:])
+    # session: --to takes precedence, else the first positional arg
+    if session_via_to:
+        session = session_via_to
     else:
-        default = _load_default_sender(config_path)
+        session = args[0]
+        args = args[1:]
+
+    role_map = _load_role_map(config_path)
+    if sender:
+        name = _lookup_role(sender, role_map)
+        message = f"[{name}]: " + ' '.join(args)
+    else:
+        default = _lookup_role(_load_default_sender(config_path), role_map)
         if default:
-            message = default + ': ' + ' '.join(args[1:])
+            message = f"[{default}]: " + ' '.join(args)
         else:
-            message = ' '.join(args[1:])
+            message = ' '.join(args)
+
+    if not message:
+        print("Usage: a message text is required", file=sys.stderr)
+        sys.exit(1)
 
     # Clear input area first (C-c to interrupt any running task)
     subprocess.run(['tmux', 'send-keys', '-t', session, 'C-c'], timeout=3)

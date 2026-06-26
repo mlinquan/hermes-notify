@@ -15,10 +15,28 @@ import sys
 from hermes_bus.client import send_message
 
 
+def _lookup_role(from_ep: str, role_map: dict) -> str:
+    """Resolve a sender token into its role_map display name.
+
+    Accepts either a session key (e.g. "shiyinru") or an existing display name.
+    Returns the token unchanged if not found in role_map.
+    """
+    if not from_ep:
+        return from_ep
+    role = role_map.get(from_ep, {})
+    if role:
+        return role.get("name", from_ep)
+    for cfg in role_map.values():
+        if cfg.get("name") == from_ep:
+            return cfg.get("name", from_ep)
+    return from_ep
+
+
 def _resolve_sender_name(override: str = None, config: dict = None) -> str:
-    if override:
-        return override
     role_map = (config or {}).get("role_map", {})
+    # --from also resolves through role_map (accepts a session key or a name)
+    if override:
+        return _lookup_role(override, role_map)
     try:
         r = subprocess.run(
             ["tmux", "display-message", "-p", "#S"],
@@ -26,8 +44,7 @@ def _resolve_sender_name(override: str = None, config: dict = None) -> str:
         )
         if r.returncode == 0 and r.stdout.strip():
             session = r.stdout.strip()
-            role = role_map.get(session, {})
-            return role.get("name", session)
+            return _lookup_role(session, role_map)
     except Exception:
         pass
     return "notify-hermes"

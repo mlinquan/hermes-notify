@@ -1,6 +1,6 @@
 [project]
 name = "hermes-notify"
-version = "0.7.0"
+version = "0.8.0"
 description = "Hermes notification toolkit — bus message sender, tmux notifier"
 readme = "README.md"
 license = {text = "MIT"}

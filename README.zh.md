@@ -163,16 +163,29 @@ notify-hermes --to lead-agent --type ack --from ci-pipeline "构建 #142 通过"
 ### 语法
 
 ```bash
-notify-agent [--from 发送者] <tmux-session-名称> "消息文本"
+notify-agent [--from 发送者] [--to 会话] <session> "消息文本"
 ```
 
 ### 参数
 
 | 参数 | 必需 | 说明 |
 |------|------|------|
-| `<session>` | 是 | 目标 **tmux session 名称**（`tmux new-session -s` 传入的名称）。这不是总线端点或 agent 名称 |
-| `--from` | 否 | 发送者显示名称。省略时从 session 名称自动检测 |
+| `--to` | 否 | 目标 tmux session 名称（位置参数 `<session>` 的替代写法） |
+| `--from` | 否 | 发送者显示名称。若传入 session key 会通过 `role_map` 解析；省略时从当前 session 自动检测 |
+| `<session>` | 是* | 目标 **tmux session 名称**（位置参数，`--to` 的替代写法） |
 | `"消息"` | 是 | 纯文本消息（位置参数，最后一个参数） |
+
+\* `--to` 与位置参数 `<session>` 至少提供一个。
+
+### 消息格式
+
+消息格式为 `[{发送者}]: {文本}`，其中 `{发送者}` 通过 `role_map` 解析：
+
+```bash
+# 若 role_map 有: shiyinru: {name: "诗银茹", ...}
+notify-agent --from shiyinru --to snow "你好"
+# 发送内容: [诗银茹]: 你好
+```
 
 ### 示例
 
@@ -181,11 +194,14 @@ notify-agent [--from 发送者] <tmux-session-名称> "消息文本"
 tmux new-session -d -s lead-agent   'claude'
 tmux new-session -d -s worker-alpha 'claude'
 
-# 发送消息
+# 发送消息（自动从当前 session 检测发送者）
 notify-agent lead-agent "任务队列为空，等待下一条指令"
 
-# 带显式发送者
-notify-agent --from worker-alpha lead-agent "构建完成，3 个测试通过"
+# 带显式发送者（通过 role_map 解析）
+notify-agent --from worker-alpha --to lead-agent "构建完成，3 个测试通过"
+
+# 使用 --to 参数
+notify-agent --from worker-alpha --to lead-agent "通过 --to 发送的消息"
 ```
 
 **重要：** 目标必须是运行中的 tmux 会话。需要总线路由消息时使用 `notify-hermes`，由 `hermes-bus-plugin` 处理。

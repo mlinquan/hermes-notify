@@ -163,16 +163,29 @@ Sends text directly to a tmux session via `send-keys`. Does NOT go through the b
 ### Syntax
 
 ```bash
-notify-agent [--from SENDER] <tmux-session-name> "message text"
+notify-agent [--from SENDER] [--to SESSION] <session> "message text"
 ```
 
 ### Parameters
 
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `<session>` | yes | Target **tmux session name** (the name passed to `tmux new-session -s`). This is NOT a bus endpoint or agent name |
-| `--from` | no | Sender display name. Auto-detected from session name if omitted |
+| `--to` | no | Target tmux session name (alternative to positional `<session>`) |
+| `--from` | no | Sender display name. Resolved through `role_map` if a session key is provided. Auto-detected from session name if omitted |
+| `<session>` | yes* | Target tmux session name (positional, alternative to `--to`) |
 | `"message"` | yes | Plain text message (positional, last argument) |
+
+\* Either `--to` or positional `<session>` is required.
+
+### Message Format
+
+Messages are formatted as `[{sender}]: {text}` where `{sender}` is resolved through `role_map`:
+
+```bash
+# If role_map has: worker-alpha: {name: "Alpha", ...}
+notify-agent --from worker-alpha --to lead-agent "Hello"
+# Sends: [Alpha]: Hello
+```
 
 ### Examples
 
@@ -181,11 +194,14 @@ notify-agent [--from SENDER] <tmux-session-name> "message text"
 tmux new-session -d -s lead-agent   'claude'
 tmux new-session -d -s worker-alpha 'claude'
 
-# Send a message
+# Send a message (auto-detect sender from current session)
 notify-agent lead-agent "Task queue is empty, ready for next assignment"
 
-# With explicit sender
-notify-agent --from worker-alpha lead-agent "Build complete, 3 tests passing"
+# With explicit sender (resolved through role_map)
+notify-agent --from worker-alpha --to lead-agent "Build complete, 3 tests passing"
+
+# Using --to parameter
+notify-agent --from worker-alpha --to lead-agent "Direct message via --to"
 ```
 
 **Important:** The target must be a running tmux session. Use `notify-hermes` for bus-routed messages that can be processed by `hermes-bus-plugin`.
